@@ -11,11 +11,13 @@ import com.multimode.kb.data.local.objectbox.ObjectBoxDataSource;
 import com.multimode.kb.data.remote.CloudProcessingClient;
 import com.multimode.kb.data.remote.FileParserServiceImpl;
 import com.multimode.kb.data.repository.DocumentRepositoryImpl;
+import com.multimode.kb.data.repository.DirectoryRepositoryImpl;
 import com.multimode.kb.data.repository.EmbeddingServiceImpl;
 import com.multimode.kb.data.repository.HybridSearchServiceImpl;
 import com.multimode.kb.data.repository.IngestionRepositoryImpl;
 import com.multimode.kb.data.repository.SearchRepositoryImpl;
 import com.multimode.kb.domain.repository.DocumentRepository;
+import com.multimode.kb.domain.repository.DirectoryRepository;
 import com.multimode.kb.domain.repository.IngestionRepository;
 import com.multimode.kb.domain.repository.SearchRepository;
 import com.multimode.kb.domain.service.EmbeddingService;
@@ -66,6 +68,7 @@ public class AppComponent {
 
     // Repositories
     private DocumentRepository documentRepository;
+    private DirectoryRepository directoryRepository;
     private IngestionRepository ingestionRepository;
     private SearchRepository searchRepository;
 
@@ -99,6 +102,7 @@ public class AppComponent {
 
         // Repositories
         documentRepository = new DocumentRepositoryImpl(objectBoxDataSource);
+        directoryRepository = new DirectoryRepositoryImpl(objectBoxDataSource);
         ingestionRepository = new IngestionRepositoryImpl(objectBoxDataSource, ftsDataSource);
         searchRepository = new SearchRepositoryImpl(getHybridSearchService());
 
@@ -126,6 +130,7 @@ public class AppComponent {
     public BoxStore getBoxStore() { return boxStore; }
 
     public DocumentRepository getDocumentRepository() { return documentRepository; }
+    public DirectoryRepository getDirectoryRepository() { return directoryRepository; }
     public IngestionRepository getIngestionRepository() { return ingestionRepository; }
     public SearchRepository getSearchRepository() { return searchRepository; }
 

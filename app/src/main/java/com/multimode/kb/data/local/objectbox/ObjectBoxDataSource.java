@@ -1,5 +1,6 @@
 package com.multimode.kb.data.local.objectbox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.objectbox.Box;
@@ -10,11 +11,13 @@ public class ObjectBoxDataSource {
     private final BoxStore boxStore;
     private final Box<KbDocumentEntity> documentBox;
     private final Box<DocumentSegmentEntity> segmentBox;
+    private final Box<TrackedDirectoryEntity> directoryBox;
 
     public ObjectBoxDataSource(BoxStore boxStore) {
         this.boxStore = boxStore;
         this.documentBox = boxStore.boxFor(KbDocumentEntity.class);
         this.segmentBox = boxStore.boxFor(DocumentSegmentEntity.class);
+        this.directoryBox = boxStore.boxFor(TrackedDirectoryEntity.class);
     }
 
     // ---- Document CRUD ----
@@ -39,6 +42,65 @@ public class ObjectBoxDataSource {
     public void deleteDocument(long documentId) {
         segmentBox.query().equal(DocumentSegmentEntity_.documentId, documentId).build().remove();
         documentBox.remove(documentId);
+    }
+
+    public List<Long> insertDocuments(List<KbDocumentEntity> documents) {
+        return documentBox.put(documents);
+    }
+
+    public List<KbDocumentEntity> getDocumentsByDirectory(long directoryId) {
+        return documentBox.query()
+                .equal(KbDocumentEntity_.directoryId, directoryId)
+                .orderAsc(KbDocumentEntity_.relativePath)
+                .build().find();
+    }
+
+    public List<KbDocumentEntity> getDocumentsByStatus(String... statuses) {
+        List<KbDocumentEntity> result = new ArrayList<>();
+        for (String status : statuses) {
+            result.addAll(documentBox.query()
+                    .equal(KbDocumentEntity_.status, status)
+                    .build().find());
+        }
+        return result;
+    }
+
+    public void deleteDocumentsByDirectory(long directoryId) {
+        List<KbDocumentEntity> docs = getDocumentsByDirectory(directoryId);
+        for (KbDocumentEntity doc : docs) {
+            segmentBox.query().equal(DocumentSegmentEntity_.documentId, doc.id).build().remove();
+        }
+        documentBox.query().equal(KbDocumentEntity_.directoryId, directoryId).build().remove();
+    }
+
+    // ---- Directory CRUD ----
+
+    public long insertDirectory(TrackedDirectoryEntity dir) {
+        return directoryBox.put(dir);
+    }
+
+    public TrackedDirectoryEntity getDirectory(long id) {
+        return directoryBox.get(id);
+    }
+
+    public List<TrackedDirectoryEntity> getAllDirectories() {
+        return directoryBox.query().orderDesc(TrackedDirectoryEntity_.createdAt).build().find();
+    }
+
+    public void updateDirectory(TrackedDirectoryEntity dir) {
+        dir.updatedAt = System.currentTimeMillis();
+        directoryBox.put(dir);
+    }
+
+    public void deleteDirectory(long id) {
+        deleteDocumentsByDirectory(id);
+        directoryBox.remove(id);
+    }
+
+    public List<TrackedDirectoryEntity> getDirectoriesByStatus(String status) {
+        return directoryBox.query()
+                .equal(TrackedDirectoryEntity_.status, status)
+                .build().find();
     }
 
     // ---- Segment CRUD ----

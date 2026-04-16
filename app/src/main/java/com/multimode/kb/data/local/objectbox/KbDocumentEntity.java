@@ -22,6 +22,12 @@ public class KbDocumentEntity {
     public long createdAt;
     public long updatedAt;
 
+    // Directory tracking fields
+    @Index
+    public long directoryId;         // FK -> TrackedDirectoryEntity.id, 0 = manually added
+    public long fileLastModified;    // DocumentFile.lastModified() for delta detection
+    public String relativePath;      // Path relative to directory root
+
     public KbDocumentEntity() {
         this.status = "PENDING";
         this.createdAt = System.currentTimeMillis();

@@ -15,7 +15,15 @@ public interface DocumentRepository {
 
     Single<List<KbDocument>> getAllDocuments();
 
+    Single<List<KbDocument>> getDocumentsByDirectory(long directoryId);
+
+    Single<List<KbDocument>> getDocumentsByStatus(DocumentStatus... statuses);
+
+    Single<List<Long>> addDocumentsBatch(List<KbDocument> documents);
+
     Completable updateDocument(KbDocument document);
 
     Completable deleteDocument(long documentId);
+
+    Completable deleteDocumentsByDirectory(long directoryId);
 }

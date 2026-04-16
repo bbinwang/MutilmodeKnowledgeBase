@@ -16,6 +16,11 @@ public class KbDocument {
     private long createdAt;
     private long updatedAt;
 
+    // Directory tracking fields
+    private long directoryId;
+    private long fileLastModified;
+    private String relativePath;
+
     public KbDocument() {
         this.status = DocumentStatus.PENDING;
         this.createdAt = System.currentTimeMillis();
@@ -52,4 +57,13 @@ public class KbDocument {
 
     public long getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
+
+    public long getDirectoryId() { return directoryId; }
+    public void setDirectoryId(long directoryId) { this.directoryId = directoryId; }
+
+    public long getFileLastModified() { return fileLastModified; }
+    public void setFileLastModified(long fileLastModified) { this.fileLastModified = fileLastModified; }
+
+    public String getRelativePath() { return relativePath; }
+    public void setRelativePath(String relativePath) { this.relativePath = relativePath; }
 }

@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters;
 import com.multimode.kb.data.local.objectbox.DocumentSegmentEntity;
 import com.multimode.kb.data.local.objectbox.KbDocumentEntity;
 import com.multimode.kb.data.local.objectbox.ObjectBoxDataSource;
+import com.multimode.kb.data.local.objectbox.TrackedDirectoryEntity;
 import com.multimode.kb.data.remote.CloudProcessingClient;
 import com.multimode.kb.data.remote.FileParserServiceImpl;
 import com.multimode.kb.di.AppComponent;
@@ -102,6 +103,18 @@ public class DocumentIngestionWorker extends Worker {
             doc.status = DocumentStatus.INGESTED.name();
             doc.totalSegments = segments.size();
             ds.updateDocument(doc);
+
+            // Update directory indexedFiles counter
+            if (doc.directoryId > 0) {
+                TrackedDirectoryEntity dir = ds.getDirectory(doc.directoryId);
+                if (dir != null) {
+                    dir.indexedFiles++;
+                    if (dir.indexedFiles >= dir.totalFiles) {
+                        dir.status = "IDLE";
+                    }
+                    ds.updateDirectory(dir);
+                }
+            }
 
             Log.i(TAG, "Ingested " + segments.size() + " segments for doc " + documentId);
             return Result.success(new Data.Builder()

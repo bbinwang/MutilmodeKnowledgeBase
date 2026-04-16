@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 
@@ -24,6 +23,8 @@ public class DocumentListViewModel extends ViewModel {
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
 
+    private long currentDirectoryId = 0;
+
     public DocumentListViewModel(DocumentRepository documentRepository) {
         this.documentRepository = documentRepository;
     }
@@ -33,6 +34,7 @@ public class DocumentListViewModel extends ViewModel {
     public LiveData<String> getError() { return error; }
 
     public void loadDocuments() {
+        currentDirectoryId = 0;
         loading.setValue(true);
         disposables.add(
                 documentRepository.getAllDocuments()
@@ -51,10 +53,32 @@ public class DocumentListViewModel extends ViewModel {
         );
     }
 
+    public void loadDocumentsByDirectory(long directoryId) {
+        currentDirectoryId = directoryId;
+        loading.setValue(true);
+        disposables.add(
+                documentRepository.getDocumentsByDirectory(directoryId)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                docs -> {
+                                    documents.setValue(docs);
+                                    loading.setValue(false);
+                                },
+                                throwable -> {
+                                    error.setValue(throwable.getMessage());
+                                    loading.setValue(false);
+                                }
+                        )
+        );
+    }
+
     public void deleteDocument(long documentId) {
         disposables.add(
                 documentRepository.deleteDocument(documentId)
-                        .andThen(documentRepository.getAllDocuments())
+                        .andThen(currentDirectoryId > 0
+                                ? documentRepository.getDocumentsByDirectory(currentDirectoryId)
+                                : documentRepository.getAllDocuments())
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(

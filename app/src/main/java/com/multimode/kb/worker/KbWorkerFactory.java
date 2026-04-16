@@ -36,6 +36,12 @@ public class KbWorkerFactory extends WorkerFactory {
             if (workerClass == EmbeddingGenerationWorker.class) {
                 return new EmbeddingGenerationWorker(appContext, workerParameters, appComponent);
             }
+            if (workerClass == DirectoryScanWorker.class) {
+                return new DirectoryScanWorker(appContext, workerParameters, appComponent);
+            }
+            if (workerClass == ResumeWorker.class) {
+                return new ResumeWorker(appContext, workerParameters, appComponent);
+            }
 
             // Fallback: use default constructor
             return workerClass.getConstructor(Context.class, WorkerParameters.class)
