@@ -13,6 +13,20 @@ import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.hslf.usermodel.HSLFSlideShow;
+import org.apache.poi.hslf.usermodel.HSLFSlide;
+import org.apache.poi.hslf.usermodel.HSLFShape;
+import org.apache.poi.hslf.usermodel.HSLFTextShape;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.usermodel.Range;
+import org.apache.poi.hwpf.usermodel.Table;
+import org.apache.poi.hwpf.usermodel.TableRow;
+import org.apache.poi.hwpf.usermodel.Paragraph;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -66,16 +80,35 @@ public class FileParserServiceImpl implements FileParserService {
         return Single.fromCallable(() -> {
             if (mimeType.contains("pdf")) {
                 return parsePdf(uri);
-            } else if (mimeType.contains("presentation") || mimeType.contains("pptx")
-                    || mimeType.contains("ppt")) {
+            } else if (mimeType.contains("spreadsheet") || mimeType.contains("xls")
+                    || mimeType.contains("excel")) {
+                return parseSpreadsheet(uri);
+            } else if (mimeType.contains("presentation") || mimeType.contains("pptx")) {
                 return parsePptx(uri);
-            } else if (mimeType.contains("officedocument") || mimeType.contains("docx")
-                    || mimeType.contains("msword")) {
+            } else if (mimeType.contains("ms-powerpoint") || isLegacyPpt(mimeType, uri)) {
+                return parsePpt(uri);
+            } else if (mimeType.contains("officedocument") || mimeType.contains("docx")) {
                 return parseDocx(uri);
+            } else if (mimeType.contains("msword") || isLegacyDoc(mimeType, uri)) {
+                return parseDoc(uri);
             } else {
                 throw new UnsupportedOperationException("Unsupported MIME type: " + mimeType);
             }
         });
+    }
+
+    /** Check if this is a legacy .ppt file (MIME may be generic on some devices). */
+    private boolean isLegacyPpt(String mimeType, Uri uri) {
+        String path = uri.getLastPathSegment();
+        return mimeType.contains("ppt") && (path != null && path.endsWith(".ppt")
+                && !path.endsWith(".pptx"));
+    }
+
+    /** Check if this is a legacy .doc file (MIME may be generic on some devices). */
+    private boolean isLegacyDoc(String mimeType, Uri uri) {
+        String path = uri.getLastPathSegment();
+        return mimeType.contains("msword") && (path != null && path.endsWith(".doc")
+                && !path.endsWith(".docx"));
     }
 
     /**
@@ -287,6 +320,185 @@ public class FileParserServiceImpl implements FileParserService {
         }
 
         Log.i(TAG, "DOCX parsed: " + segments.size() + " segments");
+        return segments;
+    }
+
+    /**
+     * Parse legacy .doc (Word 97-2003) using HWPF.
+     */
+    private List<SegmentData> parseDoc(Uri uri) throws Exception {
+        List<SegmentData> segments = new ArrayList<>();
+        StringBuilder fullText = new StringBuilder();
+
+        try (InputStream is = context.getContentResolver().openInputStream(uri);
+             HWPFDocument document = new HWPFDocument(is)) {
+
+            Range range = document.getRange();
+            int numParagraphs = range.numParagraphs();
+
+            for (int i = 0; i < numParagraphs; i++) {
+                Paragraph paragraph = range.getParagraph(i);
+                String text = paragraph.text().trim();
+                if (!text.isEmpty()) {
+                    fullText.append(text).append("\n");
+                }
+            }
+
+            // Extract tables
+            for (int t = 0; t < range.numTables(); t++) {
+                Table table = range.getTable(t);
+                fullText.append("\n[表格]\n");
+                for (int r = 0; r < table.numRows(); r++) {
+                    TableRow row = table.getRow(r);
+                    StringBuilder rowText = new StringBuilder();
+                    for (int c = 0; c < row.numCells(); c++) {
+                        if (c > 0) rowText.append(" | ");
+                        rowText.append(row.getCell(c).text().trim().replace("\n", " "));
+                    }
+                    fullText.append(rowText).append("\n");
+                }
+                fullText.append("[/表格]\n");
+            }
+        }
+
+        String text = fullText.toString().trim();
+        if (!text.isEmpty()) {
+            List<String> chunks = splitText(text);
+            for (int i = 0; i < chunks.size(); i++) {
+                segments.add(new SegmentData(chunks.get(i),
+                        "{\"chunk\":" + (i + 1) + ",\"total_chunks\":" + chunks.size()
+                                + ",\"format\":\"doc\"}"));
+            }
+        }
+
+        Log.i(TAG, "DOC parsed: " + segments.size() + " segments");
+        return segments;
+    }
+
+    /**
+     * Parse XLS/XLSX (Excel) using WorkbookFactory which auto-detects format.
+     * Each sheet is extracted with its name as a header.
+     */
+    private List<SegmentData> parseSpreadsheet(Uri uri) throws Exception {
+        List<SegmentData> segments = new ArrayList<>();
+
+        try (InputStream is = context.getContentResolver().openInputStream(uri);
+             Workbook workbook = WorkbookFactory.create(is)) {
+
+            int numberOfSheets = workbook.getNumberOfSheets();
+            Log.i(TAG, "Spreadsheet loaded: " + numberOfSheets + " sheets");
+
+            for (int s = 0; s < numberOfSheets; s++) {
+                Sheet sheet = workbook.getSheetAt(s);
+                String sheetName = sheet.getSheetName();
+                StringBuilder sheetText = new StringBuilder();
+                sheetText.append("[工作表: ").append(sheetName).append("]\n");
+
+                for (Row row : sheet) {
+                    StringBuilder rowText = new StringBuilder();
+                    boolean hasContent = false;
+                    for (int c = 0; c < row.getLastCellNum(); c++) {
+                        Cell cell = row.getCell(c);
+                        if (c > 0) rowText.append(" | ");
+                        String cellValue = getCellText(cell);
+                        if (!cellValue.isEmpty()) hasContent = true;
+                        rowText.append(cellValue);
+                    }
+                    if (hasContent) {
+                        sheetText.append(rowText).append("\n");
+                    }
+                }
+
+                String text = sheetText.toString().trim();
+                if (text.length() > sheetName.length() + 20) { // more than just the header
+                    List<String> chunks = splitText(text);
+                    for (int i = 0; i < chunks.size(); i++) {
+                        segments.add(new SegmentData(chunks.get(i),
+                                "{\"sheet\":\"" + sheetName.replace("\"", "'")
+                                        + "\",\"sheet_index\":" + (s + 1)
+                                        + ",\"total_sheets\":" + numberOfSheets
+                                        + ",\"chunk\":" + (i + 1) + "}"));
+                    }
+                }
+            }
+
+            Log.i(TAG, "Spreadsheet parsed: " + numberOfSheets + " sheets, "
+                    + segments.size() + " segments");
+        }
+        return segments;
+    }
+
+    private String getCellText(Cell cell) {
+        if (cell == null) return "";
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                double d = cell.getNumericCellValue();
+                if (d == Math.floor(d) && !Double.isInfinite(d)) {
+                    return String.valueOf((long) d);
+                }
+                return String.valueOf(d);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                try {
+                    return cell.getStringCellValue().trim();
+                } catch (Exception e) {
+                    return String.valueOf(cell.getNumericCellValue());
+                }
+            default:
+                return "";
+        }
+    }
+
+    /**
+     * Parse legacy .ppt (PowerPoint 97-2003) using HSLF.
+     */
+    private List<SegmentData> parsePpt(Uri uri) throws Exception {
+        List<SegmentData> segments = new ArrayList<>();
+
+        try (InputStream is = context.getContentResolver().openInputStream(uri);
+             HSLFSlideShow slideshow = new HSLFSlideShow(is)) {
+
+            List<HSLFSlide> slides = slideshow.getSlides();
+            int totalSlides = slides.size();
+            Log.i(TAG, "PPT loaded: " + totalSlides + " slides");
+
+            for (int i = 0; i < slides.size(); i++) {
+                HSLFSlide slide = slides.get(i);
+                StringBuilder slideText = new StringBuilder();
+
+                for (HSLFShape shape : slide.getShapes()) {
+                    if (shape instanceof HSLFTextShape) {
+                        HSLFTextShape textShape = (HSLFTextShape) shape;
+                        String text = textShape.getText().trim();
+                        if (!text.isEmpty()) {
+                            slideText.append(text).append("\n");
+                        }
+                    }
+                }
+
+                String text = slideText.toString().trim();
+                if (text.isEmpty()) continue;
+
+                int slideNum = i + 1;
+                if (text.length() <= CHUNK_SIZE * 2) {
+                    segments.add(new SegmentData(text,
+                            "{\"slide\":" + slideNum + ",\"total_slides\":" + totalSlides
+                                    + ",\"format\":\"ppt\"}"));
+                } else {
+                    List<String> chunks = splitText(text);
+                    for (int j = 0; j < chunks.size(); j++) {
+                        segments.add(new SegmentData(chunks.get(j),
+                                "{\"slide\":" + slideNum + ",\"total_slides\":" + totalSlides
+                                        + ",\"chunk\":" + (j + 1) + ",\"format\":\"ppt\"}"));
+                    }
+                }
+            }
+
+            Log.i(TAG, "PPT parsed: " + totalSlides + " slides, " + segments.size() + " segments");
+        }
         return segments;
     }
 
