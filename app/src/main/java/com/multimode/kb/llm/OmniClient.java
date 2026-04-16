@@ -176,7 +176,7 @@ public class OmniClient {
             }
 
             String responseBody = response.body().string();
-            Map<String, Object> parsed = moshi.<Object>adapter(
+            Map<String, Object> parsed = (Map<String, Object>) moshi.<Object>adapter(
                     Types.newParameterizedType(Map.class, String.class, Object.class))
                     .fromJson(responseBody);
 

@@ -2,10 +2,11 @@ package com.multimode.kb.data.local.fts;
 
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.requery.android.database.sqlite.SQLiteDatabase;
 
 public class FtsDataSource {
 

@@ -1,5 +1,6 @@
 package com.multimode.kb.domain.repository;
 
+import com.multimode.kb.domain.entity.DocumentStatus;
 import com.multimode.kb.domain.entity.KbDocument;
 
 import java.util.List;

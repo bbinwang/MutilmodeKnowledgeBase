@@ -9,10 +9,10 @@ import android.util.Log;
 import com.multimode.kb.domain.service.FileParserService;
 import com.multimode.kb.llm.OmniClient;
 
-import org.apache.pdfbox.io.MemoryUsageSetting;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
-import org.apache.pdfbox.text.PDFTextStripper;
+import com.tom_roush.pdfbox.io.MemoryUsageSetting;
+import com.tom_roush.pdfbox.pdmodel.PDDocument;
+import com.tom_roush.pdfbox.rendering.PDFRenderer;
+import com.tom_roush.pdfbox.text.PDFTextStripper;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFShape;
@@ -20,6 +20,7 @@ import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.usermodel.Range;
 import org.apache.poi.hwpf.usermodel.Table;
+import org.apache.poi.hwpf.usermodel.TableIterator;
 import org.apache.poi.hwpf.usermodel.TableRow;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -185,7 +186,7 @@ public class FileParserServiceImpl implements FileParserService {
             }
 
             if (renderer != null) {
-                renderer.dispose();
+                // tom_roush PDFRenderer has no close/dispose method; GC handles cleanup
             }
 
             Log.i(TAG, "PDF parsed: " + totalPages + " pages, " + segments.size()
@@ -344,9 +345,10 @@ public class FileParserServiceImpl implements FileParserService {
                 }
             }
 
-            // Extract tables
-            for (int t = 0; t < range.numTables(); t++) {
-                Table table = range.getTable(t);
+            // Extract tables using TableIterator
+            TableIterator tableIter = new TableIterator(range);
+            while (tableIter.hasNext()) {
+                Table table = tableIter.next();
                 fullText.append("\n[表格]\n");
                 for (int r = 0; r < table.numRows(); r++) {
                     TableRow row = table.getRow(r);

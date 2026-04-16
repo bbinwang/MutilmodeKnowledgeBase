@@ -81,11 +81,14 @@ public class DocumentRepositoryImpl implements DocumentRepository {
     @Override
     public Single<List<Long>> addDocumentsBatch(List<KbDocument> documents) {
         return Single.fromCallable(() -> {
-            List<KbDocumentEntity> entities = new ArrayList<>();
+            List<Long> ids = new ArrayList<>();
             for (KbDocument doc : documents) {
-                entities.add(toEntity(doc));
+                KbDocumentEntity entity = toEntity(doc);
+                long id = dataSource.insertDocument(entity);
+                doc.setId(id);
+                ids.add(id);
             }
-            return dataSource.insertDocuments(entities);
+            return ids;
         });
     }
 

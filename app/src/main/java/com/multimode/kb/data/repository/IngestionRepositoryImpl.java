@@ -26,11 +26,14 @@ public class IngestionRepositoryImpl implements IngestionRepository {
     @Override
     public Single<List<Long>> insertSegments(List<DocumentSegment> segments) {
         return Single.fromCallable(() -> {
-            List<DocumentSegmentEntity> entities = new ArrayList<>();
+            List<Long> ids = new ArrayList<>();
             for (DocumentSegment seg : segments) {
-                entities.add(toEntity(seg));
+                DocumentSegmentEntity entity = toEntity(seg);
+                long id = objectBoxDataSource.insertSegment(entity);
+                seg.setId(id);
+                ids.add(id);
             }
-            return objectBoxDataSource.insertSegments(entities);
+            return ids;
         });
     }
 

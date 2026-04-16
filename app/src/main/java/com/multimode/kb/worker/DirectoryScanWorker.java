@@ -105,8 +105,12 @@ public class DirectoryScanWorker extends Worker {
                 newDocs.add(doc);
             }
 
-            // Batch insert all new documents
-            List<Long> docIds = ds.insertDocuments(newDocs);
+            // Insert all new documents and collect their IDs
+            List<Long> docIds = new ArrayList<>();
+            for (KbDocumentEntity doc : newDocs) {
+                long id = ds.insertDocument(doc);
+                docIds.add(id);
+            }
 
             // Update directory counters
             dir.totalFiles = result.unchangedCount + result.newFiles.size() + result.modifiedFiles.size();

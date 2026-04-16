@@ -80,11 +80,12 @@ public class RagPipeline implements RagService {
     public Single<String> askWithHistory(String question, List<SearchResult> context,
                                           List<String[]> history) {
         return Single.fromCallable(() -> {
-            if (context == null || context.isEmpty()) {
-                context = searchService.search(question, 5).blockingGet();
+            List<SearchResult> resolvedContext = context;
+            if (resolvedContext == null || resolvedContext.isEmpty()) {
+                resolvedContext = searchService.search(question, 5).blockingGet();
             }
 
-            String contextText = buildContextText(context);
+            String contextText = buildContextText(resolvedContext);
             String userPrompt = String.format(CONTEXT_TEMPLATE, contextText, question);
 
             return llmClient.chatMultiTurn(SYSTEM_PROMPT, history, userPrompt);

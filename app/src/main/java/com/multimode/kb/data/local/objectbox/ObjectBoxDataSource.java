@@ -1,10 +1,12 @@
 package com.multimode.kb.data.local.objectbox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.objectbox.Box;
 import io.objectbox.BoxStore;
+import io.objectbox.query.QueryBuilder;
 
 public class ObjectBoxDataSource {
 
@@ -44,14 +46,14 @@ public class ObjectBoxDataSource {
         documentBox.remove(documentId);
     }
 
-    public List<Long> insertDocuments(List<KbDocumentEntity> documents) {
-        return documentBox.put(documents);
+    public void insertDocuments(List<KbDocumentEntity> documents) {
+        documentBox.put(documents);
     }
 
     public List<KbDocumentEntity> getDocumentsByDirectory(long directoryId) {
         return documentBox.query()
                 .equal(KbDocumentEntity_.directoryId, directoryId)
-                .orderAsc(KbDocumentEntity_.relativePath)
+                .order(KbDocumentEntity_.relativePath)
                 .build().find();
     }
 
@@ -59,7 +61,7 @@ public class ObjectBoxDataSource {
         List<KbDocumentEntity> result = new ArrayList<>();
         for (String status : statuses) {
             result.addAll(documentBox.query()
-                    .equal(KbDocumentEntity_.status, status)
+                    .equal(KbDocumentEntity_.status, status, QueryBuilder.StringOrder.CASE_SENSITIVE)
                     .build().find());
         }
         return result;
@@ -99,7 +101,7 @@ public class ObjectBoxDataSource {
 
     public List<TrackedDirectoryEntity> getDirectoriesByStatus(String status) {
         return directoryBox.query()
-                .equal(TrackedDirectoryEntity_.status, status)
+                .equal(TrackedDirectoryEntity_.status, status, QueryBuilder.StringOrder.CASE_SENSITIVE)
                 .build().find();
     }
 
@@ -109,8 +111,8 @@ public class ObjectBoxDataSource {
         return segmentBox.put(segment);
     }
 
-    public List<Long> insertSegments(List<DocumentSegmentEntity> segments) {
-        return segmentBox.put(segments);
+    public void insertSegments(List<DocumentSegmentEntity> segments) {
+        segmentBox.put(segments);
     }
 
     public DocumentSegmentEntity getSegment(long id) {
@@ -120,7 +122,7 @@ public class ObjectBoxDataSource {
     public List<DocumentSegmentEntity> getSegmentsByDocument(long documentId) {
         return segmentBox.query()
                 .equal(DocumentSegmentEntity_.documentId, documentId)
-                .orderAsc(DocumentSegmentEntity_.segmentIndex)
+                .order(DocumentSegmentEntity_.segmentIndex)
                 .build().find();
     }
 

@@ -195,7 +195,7 @@ public class MediaUtils {
         File tempFile = null;
 
         try {
-            extractor.setDataSource(context, videoUri);
+            extractor.setDataSource(context, videoUri, null);
 
             int audioTrack = -1;
             for (int i = 0; i < extractor.getTrackCount(); i++) {
@@ -222,10 +222,10 @@ public class MediaUtils {
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 android.media.MediaCodec.BufferInfo info = new android.media.MediaCodec.BufferInfo();
                 while (true) {
-                    int inputBufferIndex = extractor.getSampleSize();
+                    long inputBufferIndex = extractor.getSampleSize();
                     if (inputBufferIndex < 0) break; // EOS
 
-                    byte[] chunk = new byte[inputBufferIndex];
+                    byte[] chunk = new byte[(int) inputBufferIndex];
                     int read = extractor.readSampleData(java.nio.ByteBuffer.wrap(chunk), 0);
                     if (read > 0) {
                         fos.write(chunk, 0, read);

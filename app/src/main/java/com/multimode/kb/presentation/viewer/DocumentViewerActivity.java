@@ -1,5 +1,6 @@
 package com.multimode.kb.presentation.viewer;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;

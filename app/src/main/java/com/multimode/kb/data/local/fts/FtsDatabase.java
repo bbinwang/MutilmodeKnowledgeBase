@@ -1,12 +1,10 @@
 package com.multimode.kb.data.local.fts;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 
-import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory;
+import io.requery.android.database.sqlite.SQLiteDatabase;
 
-public class FtsDatabase extends SQLiteOpenHelper {
+public class FtsDatabase extends io.requery.android.database.sqlite.SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "kb_fts.db";
     private static final int DATABASE_VERSION = 1;
@@ -47,8 +45,7 @@ public class FtsDatabase extends SQLiteOpenHelper {
     """;
 
     public FtsDatabase(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION,
-              new RequerySQLiteOpenHelperFactory());
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override

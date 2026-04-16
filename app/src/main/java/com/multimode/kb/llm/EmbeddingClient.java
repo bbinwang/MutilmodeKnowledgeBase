@@ -83,7 +83,7 @@ public class EmbeddingClient {
     }
 
     private List<float[]> parseEmbeddingResponse(String json) throws IOException {
-        Map<String, Object> parsed = moshi.<Object>adapter(
+        Map<String, Object> parsed = (Map<String, Object>) moshi.<Object>adapter(
                 Types.newParameterizedType(Map.class, String.class, Object.class))
                 .fromJson(json);
 

@@ -33,7 +33,8 @@ import com.multimode.kb.llm.RerankService;
 import com.multimode.kb.worker.KbWorkerFactory;
 
 import io.objectbox.BoxStore;
-import io.objectbox.android.MyObjectBox;
+
+import com.multimode.kb.data.local.objectbox.MyObjectBox;
 
 /**
  * Manual dependency injection component (no Dagger/Hilt).
