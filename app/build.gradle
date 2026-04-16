@@ -1,0 +1,73 @@
+plugins {
+    id 'com.android.application'
+    id 'io.objectbox'
+}
+
+android {
+    namespace 'com.multimode.kb'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.multimode.kb"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // ObjectBox (vector database with HNSW)
+    implementation "io.objectbox:objectbox-android:4.1.0"
+    annotationProcessor "io.objectbox:objectbox-processor:4.1.0"
+
+    // OkHttp + Retrofit (REST API calls)
+    implementation "com.squareup.okhttp3:okhttp:4.12.0"
+    implementation "com.squareup.okhttp3:logging-interceptor:4.12.0"
+    implementation "com.squareup.retrofit2:retrofit:2.11.0"
+    implementation "com.squareup.retrofit2:converter-moshi:2.11.0"
+
+    // Moshi (JSON parsing)
+    implementation "com.squareup.moshi:moshi:1.15.2"
+
+    // SQLite FTS5 (full-text search via requery bundled SQLite)
+    implementation "com.github.requery:sqlite-android:3.45.0"
+
+    // Document parsing
+    implementation "org.apache.pdfbox:pdfbox-android:2.0.32.0"
+    implementation "org.apache.poi:poi-ooxml:5.3.0"
+    implementation "org.apache.poi:poi-scratchpad:5.3.0"
+
+    // AndroidX
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.2.0"
+    implementation "androidx.recyclerview:recyclerview:1.4.0"
+    implementation "androidx.cardview:cardview:1.0.0"
+    implementation "androidx.work:work-runtime:2.10.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.8.7"
+    implementation "androidx.lifecycle:lifecycle-livedata:2.8.7"
+    implementation "androidx.preference:preference:1.2.1"
+    implementation "com.google.android.material:material:1.12.0"
+
+    // RxJava 3
+    implementation "io.reactivex.rxjava3:rxjava:3.1.10"
+    implementation "io.reactivex.rxjava3:rxandroid:3.0.2"
+
+    // Testing
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.mockito:mockito-core:5.14.2"
+    androidTestImplementation "androidx.test.ext:junit:1.2.1"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
+}

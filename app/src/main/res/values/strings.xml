@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">全模态知识库</string>
+    <string name="nav_documents">文档</string>
+    <string name="nav_search">搜索</string>
+    <string name="nav_settings">设置</string>
+    <string name="hint_search">搜索知识库...</string>
+    <string name="hint_ask_question">提问...</string>
+    <string name="action_add_document">添加文档</string>
+    <string name="label_ingesting">入库中…</string>
+    <string name="label_ingested">已入库</string>
+    <string name="label_error">处理失败</string>
+    <string name="label_pending">等待处理</string>
+    <string name="settings_longcat_title">LongCat API</string>
+    <string name="settings_embedding_title">Embedding 服务</string>
+    <string name="settings_api_key">API Key</string>
+    <string name="settings_base_url">Base URL</string>
+    <string name="settings_model">模型名称</string>
+    <string name="settings_dimensions">向量维度</string>
+    <string name="no_documents">暂无文档，点击 + 添加</string>
+    <string name="source_page">第 %1$d 页</string>
+    <string name="source_timestamp">%1$s</string>
+    <string name="viewer_error_no_file">无法打开源文件</string>
+    <string name="viewer_error_permission">文件访问权限已丢失，请重新添加文档</string>
+    <string name="viewer_error_no_app">未找到可打开此文件的应用</string>
+    <string name="viewer_page_indicator">第 %1$d / %2$d 页</string>
+</resources>
